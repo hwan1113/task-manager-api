@@ -120,6 +120,7 @@ MongoClient.connect(connectionURL, {useNewUrlParser: true}, (error, client)=>{
     // }).catch((error)=>{
     //     console.log(error)
     // })
+
     //위의 코드를 한번에 써준것.
     // db.collection('users').updateOne({
     //     _id:new ObjectID("5cd57ae4e382d03abc4d7203")
@@ -152,13 +153,13 @@ MongoClient.connect(connectionURL, {useNewUrlParser: true}, (error, client)=>{
     // }).catch((error)=>{
     //     console.log(error)
     // })
-    db.collection('tasks').deleteOne({
-        description:"washing"
-    }).then((result)=>{
-        console.log(result)
-    }).catch((reject)=>{
-        console.log(reject)
-    })
+    // db.collection('tasks').deleteOne({
+    //     description:"washing"
+    // }).then((result)=>{
+    //     console.log(result)
+    // }).catch((reject)=>{
+    //     console.log(reject)
+    // })
 
 
 

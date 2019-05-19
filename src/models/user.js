@@ -4,8 +4,8 @@ const bcrypt =require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const Task = require('./task');
 
-//원래 Schema 안에 잇는 객체는 모델의 2번쨰 인자였으나, 이걸 Schema에 넣고
-//이 넣은 스키마를 모델의 2번째 인자로 넣어준다.
+//원래 Schema 안에 잇는 객체는 모델의 2번쨰 인자였으나(moongse.js참조), 이걸 Schema에 넣고
+//이 스키마를 모델의 2번째 인자로 넣어준다.
 const userSchema = new mongoose.Schema({
     name:{
         type:String,
@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema({
     email:{
         type:String,
         required:true,
-        //trim, lowercase같은 경우는 sanitization을 하는것. 필요에 맞춰 가공.
         trim:true,
         //unique는 save()메서드 실행시 확인이 되는듯.
         unique:true,
@@ -38,8 +37,6 @@ const userSchema = new mongoose.Schema({
     },
     age:{
         type:Number,
-        //이제 age에 숫자를 넣으면 그거에 대한 validate을 진행.(required안하면
-        //아래 validate가 실행안됨.)
         default:0,
         validate(value){
             if(value<0){
@@ -49,7 +46,7 @@ const userSchema = new mongoose.Schema({
     },
     tokens:[{
         //tokens, age같은 속성명들은 이미 객체안에 들어있는데, tokens:[{ 와 같이 또다른
-        //객체가 있으면, 그 객체안에 id를 만들어준다. 즉 token속성과 동일래벨로 _id가 만들어짐.  
+        //객체가 있으면, 그 객체안에 id를 만들어준다. 즉 token속성과 동일레벨로 _id가 만들어짐.  
         token:{
             type:String,
             required:true
@@ -71,26 +68,22 @@ userSchema.virtual('tasks', {
     foreignField:'owner' //Task에서의 owner값
 })
 
-//statics는 router의 user에서 다음 아래와 같은 메서드를 직접접근하게 하기위함.
-
 userSchema.statics.findByCredentials =async(email, password)=>{
     const user = await User.findOne({email:email})
     if(!user){
         throw new Error("Unable to Login")
     }
-
     const isMatch = await bcrypt.compare(password, user.password)
     if(!isMatch){
         throw new Error("Wrong Password")
     }
-    // console.log(user)
     return user
 }
 //위의 statics는 model에서 접근가능하며 이는 Model methods라고 하고, 
 //아래의 methods는 instance에서 접근가능함. 
 userSchema.methods.generateAuthToken = async function () {
     const user = this
-    const token = jwt.sign({_id: user._id.toString()}, process.dev.JWT_SECRET)
+    const token = jwt.sign({_id: user._id.toString()}, process.env.JWT_SECRET)
 
     user.tokens= user.tokens.concat({token: token})
     await user.save()
@@ -113,7 +106,6 @@ userSchema.methods.toJSON = function(){
     delete userObject.avatar
     
     return userObject
-
 }
 
 

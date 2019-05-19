@@ -9,21 +9,19 @@ const {sendWelcomeEmail,sendFarewellEmail} = require('../emails/account');
 router.post('/users',async (req,res)=>{
     const user = new User(req.body)
     try{
-        await user.save()
+        // await user.save()
         //sendWelcomeEmail은 await이지만, 지금은 굳이 여기서 돌아오는 값을 쓸필요가없어서 await을 안씀.
-        sendWelcomeEmail(user.email, user.name)
         const token = await user.generateAuthToken();
+        sendWelcomeEmail(user.email, user.name)
         res.status(201).send({user,token})
     }catch(e){
         res.status(400).send(e)
     }
 })
 
-router.post('/users/login',async(req,res)=>{
+router.post('/users/login', async(req,res)=>{
     try{
-        //credential이라는 메서드만듬.
         const user = await User.findByCredentials(req.body.email, req.body.password)
-        //바로위 코드와 다르게, 우리는 특정 유저객체에 대한 토큰을 만들어줘야하기 때문에, 유저객체.메서드 식으로 씀.
         const token = await user.generateAuthToken();
         //getPublicProfile이란걸 만듬.이건 model에서. 방법1
         // res.send({user: user.getPublicProfile(), token})
@@ -60,26 +58,7 @@ router.post('/users/logoutAll',auth, async(req,res)=>{
 
 router.get('/users/me', auth, async (req, res)=>{
     res.send(req.user)
-    // try{
-    //     const users = await User.find({})
-    //     res.send(users)
-    // }catch(e){
-    //     res.status(500).send()
-    // }
 })
-
-// router.get('/users/:id', async (req,res)=>{
-//     const _id= req.params.id
-//     try{
-//         const user = await User.findById(_id)
-//         if(!user){
-//             return res.status(404).send()
-//         }
-//         res.send(user)
-//     }catch(e){
-//         res.status(500).send()
-//     }
-// })
 
 router.patch('/users/me',auth, async(req,res)=>{
     const updates = Object.keys(req.body)
@@ -92,7 +71,6 @@ router.patch('/users/me',auth, async(req,res)=>{
     }
     try{
         // const user = await User.findById(req.params.id)
-
         updates.forEach((update)=>{
             req.user[update] = req.body[update]
         })
@@ -100,6 +78,9 @@ router.patch('/users/me',auth, async(req,res)=>{
 
         //아래의 findByIdANdUpdate는 save에 대한 middle웨어를 mongoose가 적용시키지 않음.
         //그래서 아래의 코드를 위의 코드로 바꿔줄 것임. 2단계로 나눠준다고보면됨.
+        //첫번쨰인자는 아이디, 두번쨰 인자는 내용,
+        //세번쨰는 option. new:true 업데이트시, 그 업데이트 결과로써 업데이트된 값이나옴(false면 업데이트되기전 값이 나옴)
+        //runvalidator는 업데이트 되는 doc에 대해 validate을 함.
         // const user = await User.findByIdAndUpdate(req.params.id, req.body,{
         //     new:true,
         //     runValidators:true
@@ -115,11 +96,6 @@ router.patch('/users/me',auth, async(req,res)=>{
 
 router.delete('/users/me',auth, async (req,res)=>{
     try{
-        // const user = await User.findByIdAndDelete(req.params.id)
-        // if(!user){
-        //     return res.status(404).send()
-        // }
-        //mongoose sytax
         await req.user.remove()
         sendFarewellEmail(req.user.email,req.user.name)
         res.send(req.user)
@@ -140,17 +116,16 @@ const avatar = multer({
         cb(undefined, true)
     }
 })
+
 router.post('/users/me/avatar', auth, avatar.single('avatar'), async (req,res)=>{
     const buffer = await sharp(req.file.buffer).resize({width:250, height:250}).png().toBuffer();
     req.user.avatar = buffer;
-    // req.user.avatar = req.file.buffer
-
-
     await req.user.save()
     res.send()
 },(error,req,res,next)=>{
     res.status(400).send({error:error.message})
 })
+
 
 router.delete('/users/me/avatar', auth, async(req, res)=>{
     req.user.avatar=undefined
@@ -162,11 +137,10 @@ router.get('/users/:id/avatar',async(req,res)=>{
     try{
         const user = await User.findById(req.params.id)
 
-        if(!user|| !user.avatar){
+        if(!user||!user.avatar){
             //여기서 에러에 걸리면 바로 아래 catch절로감.
             throw new Error();
         }
-
         //어떤 파일을 돌려받는지 얘기해줘야함.
         res.set('Content-Type','image/jpg')
         res.send(user.avatar)

@@ -1,15 +1,6 @@
 const sgMail = require('@sendgrid/mail')
-
 //다음과 같이 api키가 바로 js안에 있는건 좋지 않음. 그래서 교체할것임.
-
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// sgMail.send({
-//     to: 'fernando11@naver.com',
-//     from:'fernando11@naver.com',
-//     subject: 'This is my first creation!',
-//     text: 'I hope this one actually get to you.'
-// })
 
 const sendWelcomeEmail=(email, name)=>{
     sgMail.send({
@@ -27,9 +18,6 @@ const sendFarewellEmail=(email, name)=>{
         text: `Thank you for using our sevice ${name}, Let us know the reason for your goodbye`
     })
 }
-
-
-
 
 module.exports={
     sendWelcomeEmail,
